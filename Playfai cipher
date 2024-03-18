@@ -1,0 +1,107 @@
+#include <stdio.h>
+#include <string.h>
+#include <ctype.h>
+#include<stdlib.h>
+
+// Function to remove spaces and non-alphabetic characters from the input string
+void preprocess(char *input) {
+    int i, j = 0;
+    for (i = 0; input[i] != '\0'; i++) {
+        if (isalpha(input[i])) {
+            input[j++] = toupper(input[i]);
+        }
+    }
+    input[j] = '\0';
+}
+
+// Function to generate the key table
+void generateKeyTable(char *key, char keyTable[5][5]) {
+    int i, j, k, flag = 0, *dicty;
+    dicty = (int*)calloc(26, sizeof(int));
+    for (i = 0; i < strlen(key); i++) {
+        if (key[i] != 'J')
+            dicty[key[i] - 65] = 2;
+    }
+    dicty['J' - 65] = 1;
+
+    i = 0;
+    j = 0;
+
+    for (k = 0; k < strlen(key); k++) {
+        if (dicty[key[k] - 65] == 2) {
+            dicty[key[k] - 65] -= 1;
+            keyTable[i][j] = key[k];
+            j++;
+            if (j == 5) {
+                i++;
+                j = 0;
+            }
+        }
+    }
+    for (k = 0; k < 26; k++) {
+        if (dicty[k] == 0) {
+            keyTable[i][j] = (char)(k + 65);
+            j++;
+            if (j == 5) {
+                i++;
+                j = 0;
+            }
+        }
+    }
+}
+
+// Function to find the position of the characters in the key table
+void findPosition(char keyTable[5][5], char ch, int *row, int *col) {
+    int i, j;
+    if (ch == 'J') ch = 'I';
+    for (i = 0; i < 5; i++) {
+        for (j = 0; j < 5; j++) {
+            if (keyTable[i][j] == ch) {
+                *row = i;
+                *col = j;
+            }
+        }
+    }
+}
+
+// Function to perform encryption using Playfair cipher
+void encrypt(char *input, char keyTable[5][5], char *output) {
+    char a, b;
+    int i, row1, row2, col1, col2;
+    for (i = 0; i < strlen(input); i += 2) {
+        a = input[i];
+        b = input[i + 1];
+        if (a == b) b = 'X';
+        findPosition(keyTable, a, &row1, &col1);
+        findPosition(keyTable, b, &row2, &col2);
+        if (row1 == row2) {
+            output[i] = keyTable[row1][(col1 + 1) % 5];
+            output[i + 1] = keyTable[row2][(col2 + 1) % 5];
+        } else if (col1 == col2) {
+            output[i] = keyTable[(row1 + 1) % 5][col1];
+            output[i + 1] = keyTable[(row2 + 1) % 5][col2];
+        } else {
+            output[i] = keyTable[row1][col2];
+            output[i + 1] = keyTable[row2][col1];
+        }
+    }
+    output[i] = '\0';
+}
+
+int main() {
+    char key[25], keyTable[5][5], input[100], output[100];
+    
+    printf("Enter the key: ");
+    scanf("%s", key);
+    
+    printf("Enter the plaintext: ");
+    scanf("%s", input);
+
+    preprocess(input);
+    generateKeyTable(key, keyTable);
+    encrypt(input, keyTable, output);
+    
+    printf("Encrypted text: %s\n", output);
+    
+    return 0;
+}
